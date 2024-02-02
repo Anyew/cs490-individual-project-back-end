@@ -1,1 +1,1 @@
-# CS490-Individual-Project-Back-End
+# cs490-individual-project-back-end
