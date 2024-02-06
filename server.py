@@ -4,6 +4,9 @@ from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import text
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, func
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.types import Geometry
 from datetime import datetime    
  
 #Create Flask Instance
@@ -12,8 +15,8 @@ app = Flask(__name__)
 #Add Database
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 #MySQL db
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Supermariobros.3@localhost/sakila_test'
-
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:0725@127.0.0.1/sakila'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
 
 #Secret Key
@@ -25,20 +28,203 @@ db = SQLAlchemy(app)
 #In Context
 app.app_context().push()
 
-#Connect MySQL Database
-'''mysql = MySQL()
-app.config['MYSQL_DATABASE_USER'] = 'root'
-app.config['MYSQL_DATABASE_PASSWORD'] = 'Supermariobros.3'
-app.config['MYSQL_DATABASE_DB'] = 'sakila'
-app.config['MYSQL_DATABASE_HOST'] = 'localhost'
-mysql.init_app(app)'''
-
 #Create Model
 class Users(db.Model):
     id= db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(200), nullable=False, unique=True)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
+
+#EXAMPLE TO COPY FROM :)
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Actor Table
+class Actors(db.Model):
+    __tablename__ = 'actor'
+    actor_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
+    first_name = db.Column(db.String(45))
+    last_name = db.Column(db.String(45))
+    last_update = db.Column(db.String)
+
+#Address Table
+class Address(db.Model):
+    __tablename__ = 'address'
+    address_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
+    address = db.Column(db.String(50))
+    address2 = db.Column(db.String(50))
+    district = db.Column(db.String(20))
+    city_id = db.Column(db.Integer, unique=True)
+    postal_code = db.Column(db.String(10))
+    phone = db.Column(db.String(20))
+
+    last_update = Column(DateTime, default=func.now())  # Timestamp column with default value of current time
+
+
+#Category Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#City Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Country Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Customer Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Film Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Film_Actor Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Film_Category Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Film_Text Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Inventory Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Language Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Payment Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Rental Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Staff Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+#Store Table
+class Sock(db.Model):
+    __tablename__ = 'socks'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String)
+    style = db.Column(db.String)
+    color = db.Column(db.String)
+    quantity = db.Column(db.Integer)
+    price = db.Column(db.Float)
+    updated = db.Column(db.String)
+
+
+
+
 
     #Create String
     def __repr__(self):
