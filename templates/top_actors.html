@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Actors</title>
+</head>
+<body>
+    <h1>Top 5 Movies Rented</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Film Name</th>
+                <th>Rental Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for film in top_films %}
+            <tr>
+                <td>{{ film[1] }}</td>
+                <td>{{ film[2] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h1>Top Actors</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Actor ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Film Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for actor in top_actors %}
+            <tr>
+                <td>{{ actor[0] }}</td>
+                <td>{{ actor[1] }}</td>
+                <td>{{ actor[2] }}</td>
+                <td>{{ actor[3] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h1>Customer List</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Customer ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for customer in customer_list %}
+            <tr>
+                <td>{{ customer[0] }}</td>
+                <td>{{ customer[1] }}</td>
+                <td>{{ customer[2] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

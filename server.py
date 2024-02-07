@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash
+from flask import Flask, render_template, flash, jsonify
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
@@ -11,6 +11,8 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy import inspect
+from flask_cors import CORS
+
 
  
 #Create Flask Instance
@@ -97,71 +99,129 @@ class CustomerNameForm(FlaskForm):
     name = StringField("Customer Name", validators=[DataRequired()])
     submit = SubmitField("Submit")
 
-#Landing Page API route
-@app.route("/")
-def actors():
-    # Reflect the actor table using metadata
-    actor_table = metadata.tables['actor']
-
-    # Execute a raw SQL query to select all columns from the actor table
+#Testing Database API
+@app.route('/')
+def top_actors():
+    # Execute SQL query to get top 5 actors
     with engine.connect() as connection:
-        result = connection.execute(actor_table.select())
-        actors = result.fetchall()
+        sql_query_top_actos = text("""
+            SELECT actor.actor_id, actor.first_name, actor.last_name, COUNT(*) AS film_count
+            FROM actor
+            JOIN film_actor ON actor.actor_id = film_actor.actor_id
+            GROUP BY actor.actor_id, actor.first_name, actor.last_name
+            ORDER BY film_count DESC
+            LIMIT 5;
+        """)
+        result_top_actors = connection.execute(sql_query_top_actos)
+        top_actors = result_top_actors.fetchall()
 
-    return render_template('actors.html', actors=actors)
+    # Execute SQL query to get top 5 films
+    with engine.connect() as connection:
+        sql_query_top_films = text("""
+            select f.film_id, f.title, count(r.rental_id) as rental_count
+            from film as f
+            join  film_category as fc on f.film_id = fc.film_id
+            join category as c on fc.category_id = c.category_id
+            join inventory as i on i.film_id = f.film_id
+            join rental as r on r.inventory_id = i.inventory_id
+            group by f.film_id, f.title, c.name 
+            order by rental_count desc
+            limit 5;
+        """)
+        result_top_films = connection.execute(sql_query_top_films)
+        top_films = result_top_films.fetchall()
 
-#Add a Customer 
-@app.route("/customers/add", methods=['GET', 'POST'])
+    # Execute SQL query to get List of all Customers
+    with engine.connect() as connection:
+        sql_query_customers = text("""
+            select cu.customer_id, cu.first_name, cu.last_name, count(r.rental_id) as rental_count
+            from customer as cu
+            join rental as r on r.customer_id = cu.customer_id
+            group by cu.customer_id, cu.first_name, cu.last_name
+            order by cu.customer_id asc;
+        """)
+        customers = connection.execute(sql_query_customers)
+        customer_list = customers.fetchall()
 
-def add_customer():
-    name = None
-    form = CustomerAddForm()
-    if form.validate_on_submit():
-        user = Users.query.filter_by(email=form.email.data).first()
-        if user is None:
-            user = Users(name=form.name.data, email=form.email.data)
-            db.session.add(user)
-            db.session.commit()
-        name = form.name.data
-        form.name.data = ''
-        form.email.data = ''
-        flash("User Added Successfully")
-    our_users = Users.query.order_by(Users.date_added)
-    return render_template("add_customer.html", form=form, name=name, our_users=our_users) 
 
-#Move Search Page
-@app.route("/movies")
+    return render_template('top_actors.html', top_actors=top_actors, top_films=top_films, 
+                           customer_list=customer_list)
 
-def movies():
-    return render_template("movies.html")
+
+#HOME PAGE-----------------------------------------------------
+#Top 5 Movie for home page
+@app.route("/home_page")
+def top_films():
+    # Execute SQL query to get top 5 films
+    with engine.connect() as connection:
+        sql_query_top_films = text("""
+            select 
+                f.film_id, f.title, 
+                count(r.rental_id) as rental_count, 
+                f.description, f.release_year, 
+                f.rating,    
+                ROUND(AVG(py.amount), 2) AS average_rental_cost
+            from film as f
+            join  film_category as fc on f.film_id = fc.film_id
+            join category as c on fc.category_id = c.category_id
+            join inventory as i on i.film_id = f.film_id
+            join rental as r on r.inventory_id = i.inventory_id
+            join payment as py on py.rental_id = r.rental_id
+            group by f.film_id, f.title, c.name 
+            order by rental_count desc
+            limit 5;
+        """)
+        
+        result_top_films = connection.execute(sql_query_top_films)
+        top_films = result_top_films.fetchall()
+    return render_template('top_actors.html', top_films=top_films)
+
+
+#Top 5 actors for home page
+def top_actors():
+    # Execute SQL query to get top 5 actors
+    with engine.connect() as connection:
+        sql_query_top_actos = text("""
+            SELECT actor.actor_id, actor.first_name, actor.last_name, COUNT(*) AS film_count
+            FROM actor
+            JOIN film_actor ON actor.actor_id = film_actor.actor_id
+            GROUP BY actor.actor_id, actor.first_name, actor.last_name
+            ORDER BY film_count DESC
+            LIMIT 5;
+        """)
+        result_top_actors = connection.execute(sql_query_top_actos)
+        top_actors = result_top_actors.fetchall()
+
+    return render_template('top_actors.html', top_actors=top_actors)
+
+
+#MOVIES PAGE--------------------------------------------------
+
+
+
+#CUSTOMERS PAGE-----------------------------------------------
 
 #Customer Lookup and Info Page
 @app.route("/customers", methods=['GET', 'POST'])
-
 def customers():
-    name = None
-    form = CustomerNameForm()
-    #Form Validation
-    if form.validate_on_submit():
-        name = form.name.data
-        form.name.data = '' 
-        flash("Form Submitted Successfully")
-        
-    return render_template("customers.html", name = name, form = form)
+    # Execute SQL query to get List of all Customers
+    with engine.connect() as connection:
+        sql_query_customers = text("""
+            select cu.customer_id, cu.first_name, cu.last_name, count(r.rental_id) as rental_count
+            from customer as cu
+            join rental as r on r.customer_id = cu.customer_id
+            group by cu.customer_id, cu.first_name, cu.last_name
+            order by cu.customer_id asc;
+        """)
+        customers = connection.execute(sql_query_customers)
+        customer_list = customers.fetchall()
+    return render_template('customers.html', customer_list=customers)
 
-#Full Customer Report Page
-@app.route("/report")
-
-def report():
-    return render_template("report.html")
-
-#Members API route
-@app.route("/members")
-def members():
-    return{"members": ["Member1", "Member2", "Member3"]}
+#REPORT PAGE-------------------------------------------------
 
 if __name__ == "__main__":
     app.run(debug=True)
+CORS(app)
 
 
     
