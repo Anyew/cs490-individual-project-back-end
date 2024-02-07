@@ -4,10 +4,14 @@ from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import text
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, func
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, func, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.types import Geometry
 from datetime import datetime    
+from sqlalchemy import create_engine, MetaData
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy import inspect
+
  
 #Create Flask Instance
 app = Flask(__name__)
@@ -17,7 +21,6 @@ app = Flask(__name__)
 #MySQL db
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:0725@127.0.0.1/sakila'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-
 
 #Secret Key
 app.config['SECRET_KEY'] = "password"
@@ -35,200 +38,53 @@ class Users(db.Model):
     email = db.Column(db.String(200), nullable=False, unique=True)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
 
-#EXAMPLE TO COPY FROM :)
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
+# Define SQLAlchemy engine and session
+engine = create_engine('mysql+pymysql://root:0725@127.0.0.1/sakila') 
 
-#Actor Table
-class Actors(db.Model):
-    __tablename__ = 'actor'
-    actor_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
-    first_name = db.Column(db.String(45))
-    last_name = db.Column(db.String(45))
-    last_update = db.Column(db.String)
+# 1. Create MetaData object
+metadata = MetaData()
 
-#Address Table
-class Address(db.Model):
-    __tablename__ = 'address'
-    address_id = db.Column(db.Integer, primary_key=True, unique=True, autoincrement=True)
-    address = db.Column(db.String(50))
-    address2 = db.Column(db.String(50))
-    district = db.Column(db.String(20))
-    city_id = db.Column(db.Integer, unique=True)
-    postal_code = db.Column(db.String(10))
-    phone = db.Column(db.String(20))
+# 2. Bind MetaData to the engine
+metadata.reflect(bind=engine)
 
-    last_update = Column(DateTime, default=func.now())  # Timestamp column with default value of current time
+# 3. Automap Base
+Base = automap_base(metadata=metadata)
+Base.prepare()
 
+# 4. Access tables
+Actor = Base.classes.actor
+Address = Base.classes.address
+Category = Base.classes.category
+City = Base.classes.city
+Country = Base.classes.country
+Customer = Base.classes.customer
+Film = Base.classes.film
+Film_Actor = Base.classes.film_actor
+Film_Category = Base.classes.film_category
+Film_Text = Base.classes.film_text
+Inventory = Base.classes.inventory
+Language = Base.classes.language
+Payment = Base.classes.payment
+Rental = Base.classes.rental
+Staff = Base.classes.staff
+Store = Base.classes.store
 
-#Category Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
+# 5. Create session
+Session = sessionmaker(bind=engine)
+session = Session()
 
-#City Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
+# 6. Query data
+actors = session.query(Actor).all()
 
-#Country Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Customer Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Film Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Film_Actor Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Film_Category Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Film_Text Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Inventory Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Language Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Payment Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Rental Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Staff Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
-
-#Store Table
-class Sock(db.Model):
-    __tablename__ = 'socks'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    style = db.Column(db.String)
-    color = db.Column(db.String)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-    updated = db.Column(db.String)
+# 7. Example manipulation
+for actor in actors:
+    print(actor.actor_id, actor.first_name, actor.last_name)
 
 
 
-
-
-    #Create String
-    def __repr__(self):
-        return '<Name %r>' % self.name 
+#Create String
+def __repr__(self):
+    return '<Name %r>' % self.name 
 
 #Create Form Class
 class CustomerAddForm(FlaskForm):
@@ -243,12 +99,16 @@ class CustomerNameForm(FlaskForm):
 
 #Landing Page API route
 @app.route("/")
+def actors():
+    # Reflect the actor table using metadata
+    actor_table = metadata.tables['actor']
 
-#def index():
-#    return "<h1>Hello World!</h1>"
+    # Execute a raw SQL query to select all columns from the actor table
+    with engine.connect() as connection:
+        result = connection.execute(actor_table.select())
+        actors = result.fetchall()
 
-def index():
-    return render_template("index.html")
+    return render_template('actors.html', actors=actors)
 
 #Add a Customer 
 @app.route("/customers/add", methods=['GET', 'POST'])
