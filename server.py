@@ -181,9 +181,7 @@ def top_films():
         return jsonify({"error": str(e)})
 
 @app.route("/top_actors")
-#Top 5 actors for home page
 def top_actors():
-    # Execute SQL query to get top 5 actors
     try:
         with engine.connect() as connection:
             sql_query_top_actors = text("""
@@ -191,9 +189,11 @@ def top_actors():
                     actor.actor_id, 
                     actor.first_name, 
                     actor.last_name, 
-                    COUNT(*) AS film_count
+                    COUNT(*) AS film_count,
+                    GROUP_CONCAT(film.title SEPARATOR ', ') AS top_movies
                 FROM actor
                 JOIN film_actor ON actor.actor_id = film_actor.actor_id
+                JOIN film ON film_actor.film_id = film.film_id
                 GROUP BY actor.actor_id, actor.first_name, actor.last_name
                 ORDER BY film_count DESC
                 LIMIT 5;
@@ -206,12 +206,47 @@ def top_actors():
                     "first_name": row[1],
                     "last_name": row[2],
                     "film_count": row[3],
+                    "top_movies": row[4].split(', ')  # Split top movies string into a list
                 }
                 top_actors.append(actor_dict)
 
-        return(jsonify(top_actors))
+        return jsonify(top_actors)
     except Exception as e:
-            return jsonify({"error": str(e)})          
+            return jsonify({"error": str(e)}) 
+
+@app.route("/top_movies")
+def top_movies():
+    try:
+        actor_id = request.args.get('actor_id')
+        with engine.connect() as connection:
+            sql_query_top_movies = text("""
+                SELECT 
+                    film.film_id,
+                    film.title,
+                    film.description,
+                    film.release_year,
+                    film.rating
+                FROM film
+                JOIN film_actor ON film.film_id = film_actor.film_id
+                WHERE film_actor.actor_id = :actor_id
+                LIMIT 5;
+            """)
+            result_top_movies = connection.execute(sql_query_top_movies, actor_id=actor_id)
+            top_movies = []
+
+            for row in result_top_movies.fetchall():
+                movie = {
+                    "film_id": row[0],
+                    "title": row[1],
+                    "description": row[2],
+                    "release_year": row[3],
+                    "rating": row[4]
+                }
+                top_movies.append(movie)
+
+        return jsonify(top_movies)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 #MOVIES PAGE--------------------------------------------------
 film_actor = db.Table(
@@ -285,40 +320,86 @@ class Customer(db.Model):
     last_name = db.Column(db.String(50))
     # Add more customer attributes as needed
 
+# Route to delete a customer by ID
+@app.route('/api/customers/<int:customer_id>', methods=['DELETE'])
+def delete_customer(customer_id):
+    try:
+        # Find the customer by ID
+        customer = Customer.query.get(customer_id)
+        
+        if not customer:
+            return jsonify({'message': 'Customer not found'}), 404
+        
+        # Delete the customer
+        db.session.delete(customer)
+        db.session.commit()
+        
+        return jsonify({'message': 'Customer deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
 # Route to fetch all customers with pagination support
-@app.route('/api/customers')
-def get_customers():
-    # Get query parameters for filtering
-    customer_id = request.args.get('customer_id')
-    first_name = request.args.get('first_name')
-    last_name = request.args.get('last_name')
+@app.route('/api/customers', methods=['GET', 'POST'])
+def handle_customers():
+    session = Session()
 
-    # Construct the base query
-    query = Customer.query
+    if request.method == 'GET':
+        # Get query parameters for filtering
+        customer_id = request.args.get('customer_id')
+        first_name = request.args.get('first_name')
+        last_name = request.args.get('last_name')
 
-    # Filter customers based on query parameters
-    if customer_id:
-        query = query.filter(Customer.customer_id == customer_id)
-    if first_name:
-        query = query.filter(Customer.first_name.ilike(f'%{first_name}%'))
-    if last_name:
-        query = query.filter(Customer.last_name.ilike(f'%{last_name}%'))
+        # Construct the base query
+        query = session.query(Customer)
 
-    # Execute the query to get filtered customers
-    customers = query.all()
+        # Filter customers based on query parameters
+        if customer_id:
+            query = query.filter(Customer.customer_id == customer_id)
+        if first_name:
+            query = query.filter(Customer.first_name.ilike(f'%{first_name}%'))
+        if last_name:
+            query = query.filter(Customer.last_name.ilike(f'%{last_name}%'))
 
-    # Construct response data
-    customer_data = []
-    for customer in customers:
-        customer_data.append({
+        # Execute the query to get filtered customers
+        customers = query.all()
+
+        # Convert customers to JSON format
+        customer_data = [{
             'customer_id': customer.customer_id,
             'first_name': customer.first_name,
             'last_name': customer.last_name
             # Add more attributes if needed
-        })
+        } for customer in customers]
 
-    return jsonify({'customers': customer_data})
+        session.close()
 
+        return jsonify({'customers': customer_data})
+
+    elif request.method == 'POST':
+        try:
+            # Extract customer data from the request body
+            data = request.json
+            customer_id = data.get('customer_id')
+            first_name = data.get('first_name')
+            last_name = data.get('last_name')
+
+            # Validate customer data (you can add more validation as needed)
+
+            # Add the customer to the database
+            new_customer = Customer(customer_id=customer_id, first_name=first_name, last_name=last_name)
+            session.add(new_customer)
+            session.commit()
+
+            session.close()
+
+            # Return a success response
+            return jsonify({'message': 'Customer added successfully'}), 201
+        except Exception as e:
+            session.rollback()
+            session.close()
+            # Return an error response if something goes wrong
+            return jsonify({'error': str(e)}), 500
 #REPORT PAGE-------------------------------------------------
 
 
